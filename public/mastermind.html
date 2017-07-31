@@ -1,0 +1,410 @@
+<html>
+	<head> 
+		<style> 
+		div {color:red
+		}
+		</style>
+		<script>
+
+		var selectedDot;
+		var winningDots = [];
+		var dots = ["tealDot", "redDot", "yellowDot", "greenDot", "pinkDot", "blueDot"];
+		var currentGuessingRow;
+
+		function gameSetup (){
+			winningDots = [];
+			var randomDot = Math.floor(Math.random()*6);
+			winningDots.push(randomDot);
+			randomDot = Math.floor(Math.random()*6);
+			winningDots.push(randomDot);
+			randomDot = Math.floor(Math.random()*6);
+			winningDots.push(randomDot);
+			randomDot = Math.floor(Math.random()*6);
+			winningDots.push(randomDot);
+			currentGuessingRow = 1;
+			highlightRow();
+			var img=document.getElementById("fourholes");
+			for (var x=1; x<13; x++){
+				var canvas = document.getElementById("fourholes"+ x);
+				var ctx = canvas.getContext("2d");
+				ctx.drawImage(img, 0, 0, 55, 54)
+			}
+			for (var x=1; x<13; x++){
+				for (var y=1; y<5; y++){
+					document.getElementById ("hole"+y+x).src="hole.jpg"
+				}
+			}
+			var canvas2=document.getElementById("blackholes");
+			var img2=document.getElementById("blackholesimg")
+			var ctx1 = canvas2.getContext('2d');
+			ctx1.drawImage (img2, 0, 0);
+//			displayWinningDots();
+			handleKeyPress(event);
+			}
+
+		function handleKeyPress(event){
+			if(event.keyCode == 13) {
+			guessRow();
+			}
+		}
+			
+	
+		function highlightRow(){
+			var currentRow = document.getElementById("arrow" + currentGuessingRow);
+			currentRow.innerHTML = "<img src=\"arrow.png\" style=\"width:55px; height:54px;\">"
+			if (currentGuessingRow > 1){
+				var lastRow = document.getElementById("arrow" + (currentGuessingRow - 1));
+				lastRow.innerHTML = "";
+			}
+		}
+		
+		function highlightDot(clickDot){
+			selectedDot = clickDot;
+			for (var x=0; x<dots.length; x++){
+				var id = dots[x];
+				document.getElementById(id).style.border="";
+			}
+			selectedDot.style.border = "2px solid yellow";
+		}
+
+		function addRemoveDot(clickHole){	
+			var holeLocation = clickHole.id
+			var thirdToLastCharacter = holeLocation.charAt(holeLocation.length - 3)
+			var numberSize = 2
+			if (isNaN(parseInt(thirdToLastCharacter))){
+				numberSize = 1
+			}
+			var lastCharacter = holeLocation.substr((holeLocation.length - numberSize), numberSize)
+			var characterInt = parseInt(lastCharacter)
+			if (characterInt == currentGuessingRow) {
+					clickHole.src = selectedDot.src;
+			}
+		}
+		
+		function findGuessedIndex (holeIndex){
+			var id = "hole"+ (holeIndex+1) + "" + currentGuessingRow;
+			var lastSlash;	
+			var namePicture = document.getElementById(id).src;
+			namePicture = namePicture.replace("\.jpg","")+"Dot";
+			lastSlash = namePicture.lastIndexOf("/");
+			namePicture = namePicture.substring(lastSlash+1);
+			var chosenIndex = -1;
+			for (var x = 0; x<dots.length; x++){
+				if (namePicture == dots[x]){
+					chosenIndex = x;
+				}
+			}
+			return chosenIndex;
+		}
+		function guessRow (){
+			var rightColorRightSpot = 0;
+			var rightColorWrongSpot = 0;
+			var guessedPositions = [];
+			var errorExists = false;
+			for (var y = 0; y<4; y++){	
+				var chosenIndex = findGuessedIndex(y);
+				if (chosenIndex == -1){
+					var errorMessage = document.getElementById("errormessage" + currentGuessingRow);
+					errorMessage.innerHTML = "Fill in all holes!";
+					errorExists = true;
+					break;
+				}
+				else {
+					var rightPegRightSpotMatch = false;
+					var rightPegWrongSpotMatch = false;
+					if (chosenIndex == winningDots[y]){
+						rightPegRightSpotMatch = true;
+						guessedPositions.push(y);	
+					}
+					if (!rightPegRightSpotMatch){
+						for (var x = 0; x<winningDots.length; x++){
+							if (guessedPositions.indexOf(x)== -1 && chosenIndex == winningDots[x] && findGuessedIndex(x)!= winningDots[x]){
+									rightPegWrongSpotMatch = true;
+									guessedPositions.push(x);
+								break;
+							}
+						}
+					}
+					if (rightPegRightSpotMatch == true) {
+						rightColorRightSpot++; 		
+					}
+					else if (rightPegWrongSpotMatch == true){ 
+						rightColorWrongSpot++;
+					}
+				}
+			}
+			//alert("Right Spot " + rightColorRightSpot + " Wrong Spot " + rightColorWrongSpot);
+			if (!errorExists){
+				var errorMessage = document.getElementById("errormessage" + currentGuessingRow);
+				errorMessage.innerHTML = "";
+				displayBlackWhiteDots(currentGuessingRow, rightColorRightSpot,rightColorWrongSpot);
+				if (rightColorRightSpot == 4){
+					displayWinningDots(); 
+					setTimeout(function(){endGame("win");}, 20);
+				}
+				//Alert interrupting display of dots - need to add function to delay alert
+				else if (currentGuessingRow == 12){
+					displayWinningDots();
+					setTimeout(function(){endGame("lose");}, 20);
+				}
+				else {
+					currentGuessingRow++;
+					highlightRow ();
+				}
+			}
+		}
+		
+		
+		function endGame (winlose){
+			if ("lose" == winlose) 
+				alert ("You Lose!!!!!!");
+			if ("win" == winlose)
+				alert ("You WIN!!!!!!");
+			if (confirm("Do you want to play again?")){
+				var currentRow = document.getElementById("arrow" + currentGuessingRow);
+				currentRow.innerHTML = "";
+				gameSetup();
+			}
+		}
+		
+		function displayBlackWhiteDots(rowid, rightColorRightSpot, rightColorWrongSpot){
+			var xlocation;
+			var ylocation; 
+			for (var x = 0; x<rightColorRightSpot; x++){
+				if (x == 0){
+					xlocation = 16;
+					ylocation = 15;
+				} else if (x == 1){
+					xlocation = 38;
+					ylocation = 15;
+				} else if (x == 2){
+					xlocation = 16;
+					ylocation = 38;
+				} else if (x == 3){
+					xlocation = 38;
+					ylocation = 38;
+				}
+				var canvas = document.getElementById("fourholes" + rowid);
+				var ctx = canvas.getContext("2d");
+				ctx.beginPath();
+				ctx.arc(xlocation,ylocation,6.5,0,2* Math.PI,false);
+				ctx.fillStyle="#FF0000";
+				ctx.fill();
+				ctx.stroke();
+			}
+			for (var x = 0; x<rightColorWrongSpot; x++){
+				if (x + rightColorRightSpot == 0){
+					xlocation = 16;
+					ylocation = 15;
+				} else if (x + rightColorRightSpot == 1){
+					xlocation = 38;
+					ylocation = 15;
+				} else if (x + rightColorRightSpot == 2){
+					xlocation = 16;
+					ylocation = 38;
+				} else if (x + rightColorRightSpot == 3){
+					xlocation = 38;
+					ylocation = 38;
+				}
+				var canvas = document.getElementById("fourholes" + rowid);
+				var ctx = canvas.getContext("2d");
+				ctx.beginPath();
+				ctx.arc(xlocation,ylocation,6.5,0,2* Math.PI,false);
+				ctx.fillStyle="#FFFFFF";
+				ctx.fill();
+				ctx.stroke();
+			}		
+		}
+		
+		function displayWinningDots (){
+			var canvas = document.getElementById ("blackholes");
+			var ctx = canvas.getContext("2d");
+			for (var x=0; x<winningDots.length; x++){
+				var winningIndex = winningDots[x];
+				var winningPeg = dots[winningIndex];
+				var img=document.getElementById(winningPeg);
+				ctx.drawImage (img, 3+x*64, 5);
+			}
+		}
+			
+		
+		</script>
+	</head>
+	
+	<body onload = "gameSetup()" onkeypress = "handleKeyPress(event)"/>
+		<table style="width:14%;margin-left:43%; margin-right:43%;">
+			<tr>
+				<td id="arrow1" ></td>
+				<td>
+					<img id="hole11" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/>
+				</td>
+				<td><img id="hole21" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole31" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole41" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td>
+					<canvas id="fourholes1" height=55 width=54>
+					</canvas>
+				</td>
+				<td> <button class="button" id="guessButton" onclick="guessRow()"style="width:55px; height:63px; font-weight:bold;"> Guess </button> </td>
+				<td><div id="errormessage1"></div></td>
+			</tr>
+			<tr>
+				<td id="arrow2"></td>
+				<td><img id="hole12" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole22" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole32" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole42" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td>
+					<canvas id="fourholes2" height=55 width=54>
+					</canvas>
+				</td>
+				<td></td>
+				<td><div id="errormessage2"></div></td>
+			</tr>
+			<tr>
+				<td id="arrow3"></td>
+				<td><img id="hole13" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole23" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole33" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole43" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td>
+					<canvas id="fourholes3" height=55 width=54>
+					</canvas>
+				</td>
+				<td></td>
+				<td><div id="errormessage3"></div></td>
+			</tr>
+			<tr>
+				<td id="arrow4"></td>
+				<td><img id="hole14" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole24" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole34" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole44" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td>
+					<canvas id="fourholes4" height=55 width=54>
+					</canvas>
+				</td>
+				<td></td>
+				<td><div id="errormessage4"></div></td>				
+			</tr>
+			<tr>
+				<td id="arrow5"></td>
+				<td><img id="hole15" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole25" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole35" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole45" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td>
+					<canvas id="fourholes5" height=55 width=54>
+					</canvas>
+				</td>	
+					<td></td>
+				<td><div id="errormessage5"></div></td>
+			</tr>
+			<tr>
+				<td id="arrow6"></td>
+				<td><img id="hole16" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole26" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole36" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole46" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td>
+					<canvas id="fourholes6" height=55 width=54>
+					</canvas>
+				</td>
+				<td></td>
+				<td><div id="errormessage6"></div></td>
+			</tr>
+			<tr>
+				<td id="arrow7"></td>
+				<td><img id="hole17" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole27" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole37" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole47" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td>
+					<canvas id="fourholes7" height=55 width=54>
+					</canvas>
+				</td>			
+				<td><img id="tealDot" src="teal.jpg" style="width:55px; height:54px; padding:2px;" onclick="highlightDot(this)"/></td>
+				<td><div id="errormessage7"></div></td>
+			</tr>
+			<tr>
+				<td id="arrow8"></td>
+				<td><img id="hole18" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole28" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole38" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole48" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td>
+					<canvas id="fourholes8" height=55 width=54>
+					</canvas>
+				</td>			
+				<td><img id="redDot" src="red.jpg" style="width:55px; height:54px; padding:2px;"onclick="highlightDot(this)"/></td>
+				<td><div id="errormessage8"></div></td>
+			</tr>
+			<tr>
+				<td id="arrow9"></td>
+				<td><img id="hole19" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole29" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole39" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole49" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td>
+					<canvas id="fourholes9" height=55 width=54>
+					</canvas>
+				</td>			
+				<td><img id="yellowDot" src="yellow.jpg" style="width:55px; height:54px; padding:2px;"onclick="highlightDot(this)"/></td>
+				<td><div id="errormessage9"></div></td>
+			</tr>
+			<tr>
+				<td id="arrow10"></td>
+				<td><img id="hole110" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole210" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole310" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole410" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td>
+					<canvas id="fourholes10" height=55 width=54>
+					</canvas>
+				</td>			
+				<td><img id="greenDot" src="green.jpg" style="width:55px; height:54px; padding:2px;"onclick="highlightDot(this)"/></td>
+				<td><div id="errormessage10"></div></td>
+			</tr>
+			<tr>
+				<td id="arrow11"></td>
+				<td><img id="hole111" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole211" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole311" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole411" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td>
+					<canvas id="fourholes11" height=55 width=54>
+					</canvas>
+				</td>			
+				<td><img id="pinkDot" src="pink.jpg" style="width:55px; height:54px; padding:2px;"onclick="highlightDot(this)"/></td>
+				<td><div id="errormessage11"></div></td>
+			</tr>
+			<tr>
+				<td id="arrow12"></td>
+				<td><img id="hole112" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole212" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole312" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td><img id="hole412" src="hole.jpg" style="width:55px; height:54px;" onclick="addRemoveDot(this)"/></td>
+				<td>
+					<canvas id="fourholes12" height=55 width=54>
+					</canvas>
+				</td>			
+				<td><img id="blueDot" src="blue.jpg" style="width:55px; height:54px; padding:2px;"onclick="highlightDot(this)"/></td>
+				<td><div id="errormessage12"></div></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td colspan="4"> 
+					<img id="blackholesimg" style = "display:none; width:259px; height:63px;" src ="blackholes.jpg"/>
+					<canvas id="blackholes" width="259" height="63"> 
+					</canvas>
+				</td>
+				<td> <button class="button" id="guessButton" onclick="guessRow()"style="width:55px; height:63px; font-weight:bold;"> Guess </button> </td>
+			</tr>
+		 
+		</table>
+		<img id="fourholes" src="fourholes.jpg" style="width:55px; height:54px; display:none"/>
+	</body>
+</html>
+
+<!--https://play.google.com/store/apps/details?id=hu.dusza.mastermind-->
+
